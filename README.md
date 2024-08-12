@@ -2,7 +2,7 @@
 
 (这只是一个整合的demo，为了更好的免杀性能，后续会酌情开源)
 
-对于PE头的一些变形技术都比较老了。
+对于PE头的一些变形技术都比较老了，这次的学习与实践主要是某APT样本用了这保持签名有效的技术，并且支持shellcode的隐藏与识别，可以深挖的花样感觉会很多。
 
 利用哈希校验漏洞感染文件同时不影响签名有效性的POC，在21年就已经披露了，公开利用主要是[SigFlip](https://github.com/med0x2e/SigFlip)
 这个项目。我目前造了一下轮子，后续会持续更新进行攻防对抗。（其实更多是个demo，方便诸位自定义）
@@ -74,4 +74,5 @@ PECracker.exe crack inject [PeFile] [output] [ShellcodeFile] [flags]
 # 参考
 
 https://github.com/med0x2e/SigFlip
+
 https://mp.weixin.qq.com/s/htc8ZTbQ23kq3TEMlkqSfA
