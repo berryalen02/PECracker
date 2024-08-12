@@ -1,5 +1,7 @@
 # 前言
 
+(这只是一个整合的demo，为了更好的免杀性能，后续会酌情开源)
+
 对于PE头的一些变形技术都比较老了。
 
 利用哈希校验漏洞感染文件同时不影响签名有效性的POC，在21年就已经披露了，公开利用主要是[SigFlip](https://github.com/med0x2e/SigFlip)
@@ -50,9 +52,17 @@ PECracker.exe crack inject [PeFile] [output] [ShellcodeFile] [flags]
 
 # 效果
 
+以下测试均采用最简单的msf生成的calc.bin，无混淆
+
 ![](./images/PECracker1.gif)
 感染PE文件后不影响执行
 ![](./images/PECracker2.gif)
+360和wdf无检出
+![](./images/PECracker6.png)
+传了几个沙箱
+![](./images/PECracker3.png)
+![](./images/PECracker4.png)
+![](./images/PECracker5.png)
 
 # TODO
 
