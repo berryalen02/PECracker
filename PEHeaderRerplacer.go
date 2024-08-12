@@ -1,6 +1,7 @@
 package main
 
 import (
+	"crypto/rand"
 	"debug/pe"
 	"encoding/binary"
 	"flag"
@@ -71,6 +72,28 @@ func ReplacePEHeader(targetFilePath string, newHeader []byte) error {
 	return nil
 }
 
+// RandomizeByteAtOffset randomizes a byte at a specific offset in the file
+func RandomizeByteAtOffset(filePath string, offset int64) error {
+	file, err := os.OpenFile(filePath, os.O_RDWR, 0644)
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+
+	randomByte := make([]byte, 1)
+	_, err = rand.Read(randomByte)
+	if err != nil {
+		return err
+	}
+
+	_, err = file.WriteAt(randomByte, offset)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func main() {
 	extract := flag.String("extract", "", "从PE文件提取文件头")
 	output := flag.String("output", "header.bin", "输出提取的文件头的路径")
@@ -106,7 +129,14 @@ func main() {
 			return
 		}
 
-		fmt.Println("PE header replaced in", *target)
+		// Randomize a byte at offset 0x23 to change the hash
+		err = RandomizeByteAtOffset(*target, 0x23)
+		if err != nil {
+			fmt.Println("Error randomizing byte at offset 0x23:", err)
+			return
+		}
+
+		fmt.Println("PE header replaced and byte at offset 0x23 randomized in", *target)
 	} else {
 		fmt.Println("Usage:")
 		fmt.Println("  -extract <file> -output <file> : Extract PE header from file and save to output file")
