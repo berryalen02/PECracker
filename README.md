@@ -41,7 +41,7 @@ Flags:
 
 ```
 PECracker.exe replace extract [PE file] [output] [flags]
-PECracker.exe replace [command]
+PECracker.exe replace import [HeaderFile] [target] [flags]
 ```
 
 证书区段数据嵌入
