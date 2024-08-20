@@ -13,6 +13,8 @@
 
 # 使用方法
 
+感染文件后的效果：签名正常的文件拥有一切原有功能，携带恶意的数据。恶意数据不会执行，需要自己编写loader提取以执行。(以后更新，最近忙)
+
 目前实现了文件头伪装(暴力不优雅版)和证书区段数据嵌入，后续继续更新
 
 ```
@@ -70,6 +72,15 @@ written by https://github.com/berryalen02/PECracker
 [*] PE文件修改成功
 ```
 
+# TODO
+
+- [x] 文件头伪装(暴力替换不优雅版)
+- [x] 证书区段数据嵌入
+  - [x] 自定义标注数据内容、长度
+- [ ] 节表段空闲空间数据隐藏
+- [ ] patch(以及自动化的探索与对抗)
+- [ ] .......
+
 # 效果
 
 以下测试均采用最简单的msf生成的calc.bin，无混淆
@@ -84,14 +95,15 @@ written by https://github.com/berryalen02/PECracker
 ![](./images/PECracker4.png)
 ![](./images/PECracker5.png)
 
-# TODO
+# Star History
 
-- [x] 文件头伪装(暴力替换不优雅版)
-- [x] 证书区段数据嵌入
-  - [x] 自定义标注数据内容、长度
-- [ ] 节表段空闲空间数据隐藏
-- [ ] patch(以及自动化的探索与对抗)
-- [ ] .......
+<a href="https://star-history.com/#berryalen02/PECracker&Date">
+ <picture>
+   <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/svg?repos=berryalen02/PECracker&type=Date&theme=dark" />
+   <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/svg?repos=berryalen02/PECracker&type=Date" />
+   <img alt="Star History Chart" src="https://api.star-history.com/svg?repos=berryalen02/PECracker&type=Date" />
+ </picture>
+</a>
 
 # 免责声明
 
